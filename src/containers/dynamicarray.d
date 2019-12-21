@@ -363,7 +363,27 @@ struct DynamicArray(T, Allocator = Mallocator, bool supportGC = shouldAddGCRange
 	/// ditto
 	void opSliceAssign(T value, size_t i, size_t j) @nogc
 	{
+		assert(i <= j && j < l);
 		arr[i .. j] = value;
+	}
+
+	void opSliceAssign(Range)(Range values, size_t i, size_t j) @nogc
+	{
+		assert(i <= j && j <= arr.length);
+		assert(values.length == j - l);
+
+		static if (__traits(compiles, { arr[] = values[]; }))
+		{
+			assert(0);
+			arr[i .. j] = values[];
+		}
+		else
+		{
+			assert(0);
+			auto base = arr.ptr + i;
+			foreach (elem; values)
+				*base++ = elem;
+		}
 	}
 
 	/// Returns: the number of items in the array
@@ -446,6 +466,14 @@ version(emsi_containers_unittest) unittest
 	arr[0] = 1337;
 	assert(arr[0] == 1337);
 	assert(ints[0] == 1337);
+}
+
+version(emsi_containers_unittest) unittest
+{
+	import std.algorithm : equal;
+	import std.range : iota;
+	DynamicArray!int ints;
+	ints.reserve
 }
 
 version(emsi_containers_unittest)
